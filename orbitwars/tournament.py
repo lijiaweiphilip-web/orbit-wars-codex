@@ -17,6 +17,15 @@ def parse_seeds(raw: str, games: int) -> list[int | None]:
     return [int(item) for item in raw.split(",") if item]
 
 
+def parse_checkpoints(raw: str) -> tuple[int, ...]:
+    if not raw:
+        return (50, 100)
+    values = [int(item) for item in raw.split(",") if item.strip()]
+    if not values:
+        return (50, 100)
+    return tuple(sorted(set(values)))
+
+
 def append_results(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
@@ -45,6 +54,7 @@ def main() -> None:
     parser.add_argument("--games", type=int, default=20)
     parser.add_argument("--seeds", default="")
     parser.add_argument("--episode-steps", type=int, default=200)
+    parser.add_argument("--checkpoints", default="50,100")
     parser.add_argument("--tag", default="manual")
     parser.add_argument("--results-path", default="experiments/results.csv")
     args = parser.parse_args()
@@ -55,11 +65,12 @@ def main() -> None:
         raise SystemExit(f"{args.mode} requires exactly {needed} agents, got {len(agent_specs)}")
 
     seeds = parse_seeds(args.seeds, args.games)
+    checkpoints = parse_checkpoints(args.checkpoints)
     rows = []
     aggregate_rank_sum = 0.0
     aggregate_wins = 0
     for seed in seeds[: args.games]:
-        result = run_match(agent_specs, seed=seed, episode_steps=args.episode_steps)
+        result = run_match(agent_specs, seed=seed, episode_steps=args.episode_steps, checkpoints=checkpoints)
         my_rank = result["ranks"][0]
         aggregate_rank_sum += my_rank
         aggregate_wins += 1 if my_rank == 1 else 0

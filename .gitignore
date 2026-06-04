@@ -2,3 +2,9 @@
 .pytest_cache/
 __pycache__/
 *.pyc
+runs/
+experiments/search_wave*/
+experiments/search_wave*_smoke*/
+experiments/search_wave*_validation*/
+logs/
+*.zip

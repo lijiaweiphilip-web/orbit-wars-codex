@@ -59,6 +59,7 @@ def test_loss_report_lists_non_wins():
     assert report["winner_histogram"] == {1: 1}
     assert report["losses"][0]["leader_transition"] == "1->1"
     assert report["losses"][0]["growth_step_50_to_100"]["agent0"]["planet_growth"] == 1.0
+    assert report["losses"][0]["growth_segments"]["agent0"]["step_50_to_step_100"]["planet_growth"] == 1.0
 
 
 def test_classify_loss_pattern_midgame_falloff():
@@ -69,3 +70,32 @@ def test_classify_loss_pattern_midgame_falloff():
         }
     )
     assert pattern == "midgame_falloff"
+
+
+def test_summarize_handles_extra_checkpoints():
+    row = _row("mix_more", 2, 400, 500, 2, 3)
+    row["snapshots"] = (
+        '{"step_25": {"0": {"planets": 1, "ships": 120, "home_alive": true}, "1": {"planets": 2, "ships": 130, "home_alive": true}}, '
+        '"step_50": {"0": {"planets": 2, "ships": 200, "home_alive": true}, "1": {"planets": 3, "ships": 240, "home_alive": true}}, '
+        '"step_75": {"0": {"planets": 2, "ships": 280, "home_alive": true}, "1": {"planets": 4, "ships": 360, "home_alive": true}}, '
+        '"step_100": {"0": {"planets": 3, "ships": 400, "home_alive": true}, "1": {"planets": 5, "ships": 480, "home_alive": true}}}'
+    )
+    summary = summarize([row], tag_filter="mix_more")
+    assert summary["snapshot_summary"]["step_25"]["planets"] == 1.0
+    assert summary["snapshot_summary"]["step_75"]["ships"] == 280.0
+
+
+def test_loss_report_segments_include_intermediate_checkpoints():
+    row = _row("mix_segments", 2, 400, 500, 2, 3)
+    row["seed"] = "9"
+    row["snapshots"] = (
+        '{"step_25": {"0": {"planets": 2, "ships": 100, "home_alive": true}, "1": {"planets": 2, "ships": 110, "home_alive": true}}, '
+        '"step_50": {"0": {"planets": 3, "ships": 220, "home_alive": true}, "1": {"planets": 3, "ships": 210, "home_alive": true}}, '
+        '"step_75": {"0": {"planets": 3, "ships": 260, "home_alive": true}, "1": {"planets": 4, "ships": 320, "home_alive": true}}, '
+        '"step_100": {"0": {"planets": 3, "ships": 400, "home_alive": true}, "1": {"planets": 5, "ships": 480, "home_alive": true}}}'
+    )
+    report = loss_report([row], "mix_segments")
+    segments = report["losses"][0]["growth_segments"]
+    assert segments["agent0"]["step_25_to_step_50"]["planet_growth"] == 1.0
+    assert segments["agent0"]["step_50_to_step_75"]["planet_growth"] == 0.0
+    assert segments["winner"]["step_75_to_step_100"]["planet_growth"] == 1.0

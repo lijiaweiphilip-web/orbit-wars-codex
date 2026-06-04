@@ -49,13 +49,17 @@ def _snapshot_summary(observation: dict, num_players: int, home_ids: dict[int, i
     }
 
 
-def _collect_snapshots(steps: list[list[dict]], num_players: int, checkpoints: tuple[int, ...] = (50, 100)) -> dict[str, dict[int, dict[str, int | bool]]]:
+def _collect_snapshots(
+    steps: list[list[dict]],
+    num_players: int,
+    checkpoints: tuple[int, ...] = (50, 100),
+) -> dict[str, dict[int, dict[str, int | bool]]]:
     if not steps:
         return {}
     home_ids = _initial_home_planet_ids(steps, num_players)
     snapshots: dict[str, dict[int, dict[str, int | bool]]] = {}
     last_index = len(steps) - 1
-    for checkpoint in checkpoints:
+    for checkpoint in sorted(set(checkpoints)):
         index = min(checkpoint, last_index)
         observation = steps[index][0]["observation"]
         snapshots[f"step_{checkpoint}"] = _snapshot_summary(observation, num_players, home_ids)
@@ -80,9 +84,9 @@ def _random_agent(observation: dict, configuration: dict) -> list[list[float | i
     return [[int(planet[0]), float(angle), send]]
 
 
-def load_agent(spec: str) -> AgentFn:
+def load_agent_module(spec: str):
     if spec == "random":
-        return _random_agent
+        return None
     path = Path(spec)
     if not path.is_absolute():
         path = Path.cwd() / path
@@ -92,20 +96,74 @@ def load_agent(spec: str) -> AgentFn:
         raise RuntimeError(f"Unable to load agent from {path}")
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
+    return module
+
+
+def load_agent(spec: str) -> AgentFn:
+    if spec == "random":
+        return _random_agent
+    module = load_agent_module(spec)
     agent = getattr(module, "agent", None)
     if not callable(agent):
-        raise RuntimeError(f"{path} does not expose callable agent(observation, configuration)")
+        raise RuntimeError(f"{spec} does not expose callable agent(observation, configuration)")
     return agent
 
 
-def run_match(agent_specs: list[str], seed: int | None = None, episode_steps: int = 500) -> dict[str, object]:
+def _collect_decision_traces(
+    steps: list[list[dict]],
+    agent_specs: list[str],
+    *,
+    trace_player: int,
+    trace_step_start: int,
+    trace_step_end: int,
+    episode_steps: int,
+) -> list[dict[str, object]]:
+    if trace_player < 0 or trace_player >= len(agent_specs):
+        return []
+    module = load_agent_module(agent_specs[trace_player])
+    if module is None:
+        return []
+    trace_fn = getattr(module, "trace_observation", None)
+    if not callable(trace_fn):
+        return []
+    traces: list[dict[str, object]] = []
+    for turn in steps:
+        if trace_player >= len(turn):
+            continue
+        observation = turn[trace_player]["observation"]
+        step_num = int(observation.get("step", 0))
+        if step_num < trace_step_start or step_num > trace_step_end:
+            continue
+        payload = trace_fn(observation, {"episodeSteps": episode_steps})
+        traces.append({"step": step_num, **payload})
+    return traces
+
+
+def run_match(
+    agent_specs: list[str],
+    seed: int | None = None,
+    episode_steps: int = 500,
+    checkpoints: tuple[int, ...] = (50, 100),
+    trace_player: int | None = None,
+    trace_step_start: int = 0,
+    trace_step_end: int = 0,
+) -> dict[str, object]:
     agents = [load_agent(spec) for spec in agent_specs]
     env = make_env(num_agents=len(agents), seed=seed, episode_steps=episode_steps)
     env.run(agents)
     statuses = [entry.status for entry in env.state]
     summary = summarize_match(statuses, env.state[0].observation, len(agents))
-    summary["snapshots"] = _collect_snapshots(env.steps, len(agents))
+    summary["snapshots"] = _collect_snapshots(env.steps, len(agents), checkpoints=checkpoints)
     summary["seed"] = seed
     summary["agent_specs"] = agent_specs
+    if trace_player is not None:
+        summary["decision_traces"] = _collect_decision_traces(
+            env.steps,
+            agent_specs,
+            trace_player=trace_player,
+            trace_step_start=trace_step_start,
+            trace_step_end=trace_step_end,
+            episode_steps=episode_steps,
+        )
     summary["json"] = json.dumps(summary, ensure_ascii=False)
     return summary

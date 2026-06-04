@@ -188,6 +188,29 @@ def _growth_between_checkpoints(
     }
 
 
+def _ordered_step_names(snapshots: dict[str, dict[str | int, dict[str, float | int | bool]]]) -> list[str]:
+    def _step_num(name: str) -> int:
+        try:
+            return int(name.split("_", 1)[1])
+        except (IndexError, ValueError):
+            return 10**9
+
+    return sorted(snapshots.keys(), key=_step_num)
+
+
+def _growth_segments(
+    snapshots: dict[str, dict[str | int, dict[str, float | int | bool]]],
+    player: int,
+) -> dict[str, dict[str, float]]:
+    segments: dict[str, dict[str, float]] = {}
+    ordered_steps = _ordered_step_names(snapshots)
+    for start_step, end_step in zip(ordered_steps, ordered_steps[1:]):
+        growth = _growth_between_checkpoints(snapshots, player, start_step=start_step, end_step=end_step)
+        if growth is not None:
+            segments[f"{start_step}_to_{end_step}"] = growth
+    return segments
+
+
 def loss_report(rows: list[dict[str, str]], tag_filter: str) -> dict[str, object]:
     filtered = _filter_rows(rows, tag_filter=tag_filter)
     if not filtered:
@@ -224,6 +247,8 @@ def loss_report(rows: list[dict[str, str]], tag_filter: str) -> dict[str, object
         step_100_leader = checkpoint_leaders.get("step_100")
         my_growth = _growth_between_checkpoints(snapshots, 0)
         winner_growth = _growth_between_checkpoints(snapshots, winner)
+        my_growth_segments = _growth_segments(snapshots, 0)
+        winner_growth_segments = _growth_segments(snapshots, winner)
         if step_50_leader or step_100_leader:
             transition = f"{int(step_50_leader['player']) if step_50_leader else 'na'}->{int(step_100_leader['player']) if step_100_leader else 'na'}"
             leader_transition_counter[transition] += 1
@@ -241,6 +266,10 @@ def loss_report(rows: list[dict[str, str]], tag_filter: str) -> dict[str, object
                 "growth_step_50_to_100": {
                     "agent0": my_growth,
                     "winner": winner_growth,
+                },
+                "growth_segments": {
+                    "agent0": my_growth_segments,
+                    "winner": winner_growth_segments,
                 },
                 "leader_transition": transition,
             }
