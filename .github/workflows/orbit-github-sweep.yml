@@ -19,6 +19,10 @@ on:
         description: Local worker processes per GitHub runner
         required: true
         default: "2"
+      manifest_seed:
+        description: Random seed for manifest generation
+        required: true
+        default: "20260605"
 
 jobs:
   shard:
@@ -78,7 +82,7 @@ jobs:
           python tools/generate_orbit_search_manifest.py \
             --output experiments/github_sweep/manifest.jsonl \
             --count "${{ inputs.count }}" \
-            --seed 20260605
+            --seed "${{ inputs.manifest_seed }}"
 
       - name: Evaluate shard
         run: |
