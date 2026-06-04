@@ -1,0 +1,27 @@
+{
+  "name": "orbit-wars-codex",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bullseye",
+  "postCreateCommand": "python -m pip install --upgrade pip && pip install -r requirements.txt",
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "docs/GITHUB_DAILY_CHECKLIST.md",
+        "docs/GITHUB_SETUP.md",
+        "orbitwars/heuristics.py"
+      ]
+    },
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/python/current/bin/python",
+        "files.exclude": {
+          "**/.pytest_cache": true,
+          "**/__pycache__": true
+        }
+      }
+    }
+  }
+}

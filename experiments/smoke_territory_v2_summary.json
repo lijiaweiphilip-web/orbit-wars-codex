@@ -1,0 +1,79 @@
+{
+  "pool": "github_light",
+  "tag_prefix": "smoke_territory_v2",
+  "matchups": [
+    {
+      "tag": "smoke_territory_v2_2p_random_smoke",
+      "mode": "2p",
+      "games": 4,
+      "win_rate_agent0": 0.75,
+      "avg_rank_agent0": 1.25,
+      "agents": [
+        "agents/heuristic_v1.py",
+        "random"
+      ]
+    },
+    {
+      "tag": "smoke_territory_v2_2p_v0_smoke",
+      "mode": "2p",
+      "games": 4,
+      "win_rate_agent0": 0.75,
+      "avg_rank_agent0": 1.25,
+      "agents": [
+        "agents/heuristic_v1.py",
+        "agents/heuristic_v0.py"
+      ]
+    },
+    {
+      "tag": "smoke_territory_v2_4p_mix_a_smoke",
+      "mode": "4p",
+      "games": 4,
+      "win_rate_agent0": 1.0,
+      "avg_rank_agent0": 1.0,
+      "agents": [
+        "agents/heuristic_v1.py",
+        "agents/heuristic_v0.py",
+        "random",
+        "random"
+      ]
+    }
+  ],
+  "combined": {
+    "games": 12,
+    "win_rate_agent0": 0.8333,
+    "avg_rank_agent0": 1.1667,
+    "rank_histogram": {
+      "1": 10,
+      "2": 2
+    },
+    "mode_histogram": {
+      "2p": 8,
+      "4p": 4
+    },
+    "winner_histogram": {
+      "1": 2,
+      "0": 10
+    },
+    "avg_score_delta_vs_best_other": 235.83,
+    "best_score_delta": 992,
+    "worst_score_delta": -432,
+    "snapshot_summary": {
+      "step_50": {
+        "planets": 4.25,
+        "ships": 361.083,
+        "home_alive": 1.0
+      },
+      "step_100": {
+        "planets": 5.417,
+        "ships": 1000.5,
+        "home_alive": 1.0
+      }
+    },
+    "tags_seen": [
+      "smoke_territory_v2_2p_random_smoke",
+      "smoke_territory_v2_2p_v0_smoke",
+      "smoke_territory_v2_4p_mix_a_smoke"
+    ]
+  },
+  "results_path": "experiments\\results.csv"
+}

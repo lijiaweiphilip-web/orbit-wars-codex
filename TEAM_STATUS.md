@@ -1,0 +1,45 @@
+2026-06-02 bootstrap started
+
+- Local Orbit Wars workspace created.
+- Environment schema verified against local `kaggle_environments`.
+- Baseline heuristic, tournament runner, sweep stub, and submission packager added.
+- Full local test pass completed (`6 passed`).
+- Submission package regenerated after parameter sweep.
+- Current baseline is submit-safe but not yet strong; next step is heuristic quality work, not infrastructure.
+- Opening expansion was identified as the main bottleneck and has now been improved.
+- New verified checkpoints:
+- 2p `opening_v1_2p_seq`: 4/6 wins, step_50 planets 3.167, step_100 planets 4.333.
+- 4p `opening_v1_4p_seq`: avg rank 2.0, step_50 planets 2.5, step_100 planets 2.833.
+- 4p `mid4p_regroup_v1`: avg rank 1.875, step_50 planets 3.0, step_100 planets 3.375.
+- Current direction is working: 4p post-opening regrouping improved conversion slightly without breaking home survival.
+- Reusable sparring pool added via `configs/sparring_pool.json` and `orbitwars/sparring.py`.
+- Mixed-pool checkpoint `sparring_v1_mix`: 2p is strong, but 4p `mix_b` and `mix_c` remain weaker than `mix_a`, so the next target is 4p table-robust target selection.
+- GitHub cloud-agent offload playbook added in `docs/GITHUB_CLOUD_AGENT_PLAYBOOK.md`.
+- Ready-to-paste cloud-agent issue packets added under `.github-cloud-agent/packets/` for weak-table diagnostics and sparring-tooling work.
+- `orbitwars/replay_tools.py` now supports `--compare-tags`, and `tests/test_replay_tools.py` covers single-tag and baseline-delta summaries.
+- Latest mixed-pool checkpoint `sparring_v2_recover`: combined win rate 0.6333, avg rank 1.7, avg score delta 59.6.
+- 4p recovery expansion materially improved `mix_a` and `mix_b`; `mix_c` still has rank lag, but economy and planet-count signals improved.
+- `mixc_recovery3_v1` improved `mix_c` economy further, but rank stayed at 2.3333, so the next change should target post-expansion conversion instead of more recovery widening.
+- `orbitwars/replay_tools.py` now supports `--loss-report`; on `sparring_v2_recover_4p_mix_c`, most losses stay close at `step_50` and fall behind more clearly by `step_100`.
+- Loss pattern classification added: for `sparring_v2_recover_4p_mix_c`, the split is `midgame_falloff: 3`, `early_deficit: 1`.
+- GitHub Actions workflows added for remote `pytest` and bounded manual sparring, so some coding/test load can move off the 16 GB local laptop.
+- A dedicated `github_light` sparring pool now exists for remote smoke checks, and `scripts/prepare_github_cloud_agent_issue.py` can generate fresh cloud-agent issue packets on demand.
+- Lightweight remote sparring can now write and upload a JSON summary artifact, so GitHub-run smoke checks are easier to inspect without local post-processing.
+- GitHub lightweight sparring can now render a Markdown summary for the Actions job page, so the first-pass read no longer requires downloading artifacts.
+- Daily GitHub usage is now documented in one page, and a ready-made cloud-agent issue template exists under `.github/ISSUE_TEMPLATE/`.
+- First-time GitHub hookup is now documented in `docs/GITHUB_SETUP.md`, including workflow visibility and first-run checks.
+- A Codespaces dev container now exists under `.devcontainer/`, so low-RAM remote development is set up in-repo instead of being just a recommendation.
+- `replay_tools --loss-report` now exposes winner and leader-transition histograms; on `sparring_v2_recover_4p_mix_c`, most losses are `0->other` transitions from `step_50` to `step_100`, which points to weak lead conversion.
+- A direct `mixc_leadguard_v1` test did not change outcome metrics, so that broad lead-guard idea is not staying on the mainline.
+- `loss-report` now shows `step_50 -> step_100` growth for both agent 0 and the winner; on key `mix_c` losses, our ships often grow while our planet count stalls, which points to weak territory conversion.
+- `mixc_territory_v2` is now on the mainline heuristic path: it makes 4p midgame leading positions favor cheap nearby expansion more strongly and caps over-send on conversion captures.
+- `mixc_territory_v2` did not improve `mix_c` rank yet, but it did improve economy signals over `sparring_v2_recover_4p_mix_c`: avg score delta from `-142.83` to `-122.17`, `step_50 planets` from `3.0` to `3.333`, and `step_100 planets` from `3.333` to `3.5`.
+- `github_light` smoke stayed healthy after that change: combined `12`-game smoke was `win_rate 0.8333`, `avg_rank 1.1667`, with `4p_mix_a_smoke` still at `1.0` avg rank.
+- A follow-up `mixc_frontier_v1` branch tested extra frontier-hold behavior for threatened leading planets; it produced nearly the same `mix_c` profile as `mixc_territory_v2`, so it was not kept on the mainline.
+- `mixc_contested_v1` is now the more promising mainline direction: it penalizes high-pressure 4p conversion targets and prefers safer captures while leading.
+- `mixc_contested_v1` still has `mix_c` avg rank `2.3333`, but it improves economy further over `mixc_territory_v2`: avg score delta `-81.17`, `step_100 planets 3.667`, `step_100 ships 684.333`.
+- `github_light` smoke also stayed healthy after the contested-target change: combined `12`-game smoke remained `win_rate 0.8333`, `avg_rank 1.1667`.
+- `mixc_proximity_v1` is now the current mainline variant: it extends the contested-target logic with a direct "who is closer to this target" signal.
+- `mixc_proximity_v1` still has `mix_c` avg rank `2.3333`, but improves economy again over `mixc_contested_v1`: avg score delta `-73.17` and `step_100 ships 693.0`, while keeping `step_100 planets 3.667`.
+- `github_light` smoke remained stable after the proximity change as well: combined `12`-game smoke stayed `win_rate 0.8333`, `avg_rank 1.1667`.
+- A follow-up `mixc_seataware_v1` branch tested a strongest-rival seat-aware extension on top of `mixc_proximity_v1`, but it produced the same outcomes and was removed from the mainline.

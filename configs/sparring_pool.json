@@ -1,0 +1,62 @@
+{
+  "default": [
+    {
+      "name": "2p_random",
+      "mode": "2p",
+      "games": 6,
+      "episode_steps": 120,
+      "agents": ["agents/heuristic_v1.py", "random"]
+    },
+    {
+      "name": "2p_v0",
+      "mode": "2p",
+      "games": 6,
+      "episode_steps": 120,
+      "agents": ["agents/heuristic_v1.py", "agents/heuristic_v0.py"]
+    },
+    {
+      "name": "4p_mix_a",
+      "mode": "4p",
+      "games": 6,
+      "episode_steps": 120,
+      "agents": ["agents/heuristic_v1.py", "agents/heuristic_v0.py", "random", "random"]
+    },
+    {
+      "name": "4p_mix_b",
+      "mode": "4p",
+      "games": 6,
+      "episode_steps": 120,
+      "agents": ["agents/heuristic_v1.py", "random", "agents/heuristic_v0.py", "random"]
+    },
+    {
+      "name": "4p_mix_c",
+      "mode": "4p",
+      "games": 6,
+      "episode_steps": 120,
+      "agents": ["agents/heuristic_v1.py", "random", "random", "agents/heuristic_v0.py"]
+    }
+  ],
+  "github_light": [
+    {
+      "name": "2p_random_smoke",
+      "mode": "2p",
+      "games": 4,
+      "episode_steps": 100,
+      "agents": ["agents/heuristic_v1.py", "random"]
+    },
+    {
+      "name": "2p_v0_smoke",
+      "mode": "2p",
+      "games": 4,
+      "episode_steps": 100,
+      "agents": ["agents/heuristic_v1.py", "agents/heuristic_v0.py"]
+    },
+    {
+      "name": "4p_mix_a_smoke",
+      "mode": "4p",
+      "games": 4,
+      "episode_steps": 100,
+      "agents": ["agents/heuristic_v1.py", "agents/heuristic_v0.py", "random", "random"]
+    }
+  ]
+}

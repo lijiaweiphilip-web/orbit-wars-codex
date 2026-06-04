@@ -1,0 +1,71 @@
+name: Lightweight Sparring
+
+on:
+  workflow_dispatch:
+    inputs:
+      pool:
+        description: "Pool name from configs/sparring_pool.json"
+        required: true
+        default: "github_light"
+      tag_prefix:
+        description: "Tag prefix for this remote run"
+        required: true
+        default: "gha_sparring"
+      results_path:
+        description: "Artifact CSV path written inside the runner workspace"
+        required: true
+        default: "experiments/github_actions_results.csv"
+      summary_path:
+        description: "Artifact JSON summary path written inside the runner workspace"
+        required: true
+        default: "experiments/github_actions_summary.json"
+      summary_markdown_path:
+        description: "Artifact Markdown summary path written inside the runner workspace"
+        required: true
+        default: "experiments/github_actions_summary.md"
+
+jobs:
+  sparring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run lightweight sparring pool
+        run: >
+          python -m orbitwars.sparring
+          --pool "${{ inputs.pool }}"
+          --tag-prefix "${{ inputs.tag_prefix }}_${{ github.run_number }}"
+          --results-path "${{ inputs.results_path }}"
+          --summary-path "${{ inputs.summary_path }}"
+
+      - name: Render Markdown summary
+        run: >
+          python scripts/render_sparring_summary.py
+          --summary-json "${{ inputs.summary_path }}"
+          --output "${{ inputs.summary_markdown_path }}"
+
+      - name: Publish job summary
+        run: Get-Content "${{ inputs.summary_markdown_path }}" >> $env:GITHUB_STEP_SUMMARY
+        shell: pwsh
+
+      - name: Upload sparring artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lightweight-sparring-${{ github.run_number }}
+          path: |
+            ${{ inputs.results_path }}
+            ${{ inputs.summary_path }}
+            ${{ inputs.summary_markdown_path }}

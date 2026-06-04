@@ -1,0 +1,18 @@
+{
+  "aggression_2p": 1.1,
+  "aggression_4p": 0.8,
+  "reserve_base": 8,
+  "reserve_pressure_factor": 1.0,
+  "reserve_value_factor": 0.7,
+  "neutral_priority": 1.2,
+  "enemy_denial_bonus": 0.2,
+  "travel_penalty": 0.9,
+  "third_party_risk": 1.4,
+  "min_send_margin": 1,
+  "max_actions_per_turn": 3,
+  "planet_value_factor": 1.8,
+  "enemy_pressure_radius": 24.0,
+  "max_target_candidates": 8,
+  "final_step_horizon": 30,
+  "ignore_comets": true
+}

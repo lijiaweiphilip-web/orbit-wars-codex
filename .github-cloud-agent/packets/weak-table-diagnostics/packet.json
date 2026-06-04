@@ -1,0 +1,25 @@
+{
+  "decision": "Hybrid",
+  "repo_task_type": "diagnostics",
+  "objective": "Add weak-table diagnostics for Orbit Wars 4p sparring tags.",
+  "privacy": "normal",
+  "allowed_files": [
+    "orbitwars/replay_tools.py",
+    "tests",
+    "docs/FINAL_REPORT.md"
+  ],
+  "blocked_files": [
+    "submission",
+    "agents",
+    "orbitwars/heuristics.py"
+  ],
+  "acceptance_criteria": [
+    "CLI can compare one or more tags from experiments/results.csv.",
+    "Output includes rank distribution, score delta summary, and snapshot comparison.",
+    "Existing replay_tools single-tag behavior stays intact.",
+    "Relevant tests pass."
+  ],
+  "tests": [
+    "python -m pytest -q"
+  ]
+}
