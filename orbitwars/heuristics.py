@@ -89,6 +89,19 @@ class HeuristicParams:
     four_player_conversion_late_source_margin: float = 1.6
     four_player_conversion_late_ship_ratio: float = 0.45
     four_player_conversion_late_pressure_cap: float = 10.0
+    arrival_time_required: bool = False
+    arrival_enemy_growth_weight: float = 0.75
+    arrival_safety_margin: float = 1.0
+    four_player_weak_harvest: bool = False
+    four_player_weak_harvest_bonus: float = 1.35
+    four_player_elimination_ship_cap: int = 120
+    four_player_elimination_bonus: float = 18.0
+    four_player_swarm_enabled: bool = False
+    four_player_swarm_start: int = 55
+    four_player_swarm_min_production: int = 5
+    four_player_swarm_max_sources: int = 3
+    four_player_swarm_target_max_eta: int = 22
+    four_player_swarm_source_margin: float = 1.15
 
     @classmethod
     def from_mapping(cls, values: dict[str, float | int | bool]) -> "HeuristicParams":
@@ -221,6 +234,20 @@ def required_ships(target: PlanetState, params: HeuristicParams) -> int:
     return int(math.ceil(target.ships * weight + params.min_send_margin))
 
 
+def required_ships_at_arrival(
+    source: PlanetState,
+    target: PlanetState,
+    params: HeuristicParams,
+) -> int:
+    base_required = required_ships(target, params)
+    if not params.arrival_time_required or target.owner in (-1, source.owner):
+        return base_required
+    gap = distance(source.x, source.y, target.x, target.y)
+    eta = estimate_eta(gap, max(base_required, 1), 6.0)
+    growth = target.production * max(0.0, eta) * params.arrival_enemy_growth_weight
+    return int(math.ceil(target.ships + growth + params.min_send_margin + params.arrival_safety_margin))
+
+
 def _neutral_expand_action(
     state: GameState,
     params: HeuristicParams,
@@ -309,6 +336,70 @@ def _recovery_expand_action(state: GameState, params: HeuristicParams) -> list[l
     )
 
 
+def _swarm_action(state: GameState, params: HeuristicParams) -> list[list[float | int]]:
+    if not params.four_player_swarm_enabled:
+        return []
+    if state.num_players < 4 or state.step < params.four_player_swarm_start:
+        return []
+    if len(state.my_planets) < 2:
+        return []
+    targets = [
+        planet
+        for planet in state.planets
+        if planet.owner != state.my_id
+        and not (planet.is_comet and params.ignore_comets)
+        and planet.production >= params.four_player_swarm_min_production
+    ]
+    if not targets:
+        return []
+    sources = sorted(state.my_planets, key=lambda planet: planet.ships, reverse=True)[: params.four_player_swarm_max_sources]
+    candidates: list[tuple[float, PlanetState]] = []
+    for target in targets:
+        source_terms = []
+        for source in sources:
+            required = required_ships_at_arrival(source, target, params)
+            gap = distance(source.x, source.y, target.x, target.y)
+            eta = estimate_eta(gap, max(required, 1), 6.0)
+            if eta <= params.four_player_swarm_target_max_eta:
+                available = source.ships - reserve_for_planet(state, source, params)
+                source_terms.append(max(0, available))
+        if len(source_terms) < 2:
+            continue
+        combined_available = sum(source_terms)
+        needed = max(required_ships_at_arrival(sources[0], target, params), required_ships(target, params))
+        if combined_available < needed * params.four_player_swarm_source_margin:
+            continue
+        owner_bonus = 14.0 if target.owner not in (-1, state.my_id) else 6.0
+        score = target.production * 22.0 + owner_bonus - target.ships * 0.4
+        candidates.append((score, target))
+    if not candidates:
+        return []
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    target = candidates[0][1]
+    needed = int(math.ceil(required_ships_at_arrival(sources[0], target, params) * params.four_player_swarm_source_margin))
+    actions: list[list[float | int]] = []
+    remaining = needed
+    for source in sources:
+        available = source.ships - reserve_for_planet(state, source, params)
+        if available <= params.min_send_margin:
+            continue
+        gap = distance(source.x, source.y, target.x, target.y)
+        eta = estimate_eta(gap, max(available, 1), 6.0)
+        if eta > params.four_player_swarm_target_max_eta:
+            continue
+        send = min(available, max(params.min_send_margin + 1, int(math.ceil(remaining / max(1, params.four_player_swarm_max_sources - len(actions))))))
+        if send <= params.min_send_margin:
+            continue
+        theta = angle_between(source.x, source.y, target.x, target.y)
+        actions.append([source.id, float(theta), int(send)])
+        remaining -= send
+        if remaining <= 0 or len(actions) >= params.max_actions_per_turn:
+            break
+    if len(actions) < 2:
+        return []
+    return actions
+
+
 def _is_home_planet(state: GameState, planet: PlanetState) -> bool:
     for initial in state.raw_observation.get("initial_planets", []):
         if int(initial[0]) == planet.id and int(initial[1]) == state.my_id:
@@ -359,15 +450,16 @@ def _territory_conversion_mode(state: GameState, params: HeuristicParams) -> boo
 def _player_totals(state: GameState) -> dict[int, dict[str, float]]:
     totals: dict[int, dict[str, float]] = {}
     for player_id in range(state.num_players):
-        totals[player_id] = {"planets": 0.0, "ships": 0.0}
+        totals[player_id] = {"planets": 0.0, "ships": 0.0, "production": 0.0}
     for planet in state.planets:
         if planet.owner >= 0:
-            totals.setdefault(planet.owner, {"planets": 0.0, "ships": 0.0})
+            totals.setdefault(planet.owner, {"planets": 0.0, "ships": 0.0, "production": 0.0})
             totals[planet.owner]["planets"] += 1.0
             totals[planet.owner]["ships"] += float(planet.ships)
+            totals[planet.owner]["production"] += float(planet.production)
     for fleet in state.fleets:
         if fleet.owner >= 0:
-            totals.setdefault(fleet.owner, {"planets": 0.0, "ships": 0.0})
+            totals.setdefault(fleet.owner, {"planets": 0.0, "ships": 0.0, "production": 0.0})
             totals[fleet.owner]["ships"] += float(fleet.ships)
     return totals
 
@@ -425,9 +517,23 @@ def _nearest_enemy_owner_to_target(state: GameState, target: PlanetState) -> int
     return enemy_candidates[0][1]
 
 
+def _weakest_enemy_player_id(state: GameState) -> int | None:
+    totals = _player_totals(state)
+    enemy_candidates: list[tuple[float, int]] = []
+    for player, values in totals.items():
+        if player == state.my_id or values["ships"] <= 0:
+            continue
+        strength = values["ships"] + values["production"] * 18.0 + values["planets"] * 12.0
+        enemy_candidates.append((strength, player))
+    if not enemy_candidates:
+        return None
+    enemy_candidates.sort(key=lambda item: (item[0], item[1]))
+    return enemy_candidates[0][1]
+
+
 def _target_score(state: GameState, source: PlanetState, target: PlanetState, params: HeuristicParams) -> float:
     gap = distance(source.x, source.y, target.x, target.y)
-    ships_needed = required_ships(target, params)
+    ships_needed = required_ships_at_arrival(source, target, params)
     eta = estimate_eta(gap, max(ships_needed, 1), 6.0)
     if eta > _max_eta_for_phase(state, params):
         return -1e9
@@ -443,6 +549,15 @@ def _target_score(state: GameState, source: PlanetState, target: PlanetState, pa
         risk += params.third_party_risk * 0.5
         if state.step <= params.four_player_caution_steps and alive_enemy_count >= params.four_player_caution_enemy_count:
             risk += target.production * params.four_player_caution_enemy_risk
+        if params.four_player_weak_harvest:
+            weakest_enemy = _weakest_enemy_player_id(state)
+            totals = _player_totals(state)
+            target_owner_totals = totals.get(target.owner, {"ships": 9999.0, "production": 0.0, "planets": 0.0})
+            if target.owner == weakest_enemy:
+                enemy_bonus += params.four_player_weak_harvest_bonus * max(1, target.production)
+                risk -= min(5.0, target.production * 0.5)
+            if target_owner_totals["ships"] <= params.four_player_elimination_ship_cap:
+                enemy_bonus += params.four_player_elimination_bonus
     if target.is_comet and params.ignore_comets:
         return -1e9
     if state.episode_steps - state.step <= params.final_step_horizon:
@@ -609,6 +724,14 @@ def choose_actions_with_trace(
             "actions": recovery_actions[: params.opening_expand_max_actions],
             "sources": [],
         }
+    swarm_actions = _swarm_action(state, params)
+    if swarm_actions:
+        return swarm_actions[: params.max_actions_per_turn], {
+            "step": state.step,
+            "mode": "swarm",
+            "actions": swarm_actions[: params.max_actions_per_turn],
+            "sources": [],
+        }
     actions: list[list[float | int]] = []
     aggression = params.aggression_2p if state.num_players <= 2 else params.aggression_4p
     threatened_own = [planet for planet in state.my_planets if _planet_is_threatened(state, planet, params)]
@@ -654,6 +777,8 @@ def choose_actions_with_trace(
             picked_target = False
             for score, target in scored_targets:
                 send_floor = int(math.ceil(required_ships(target, params) * params.post_capture_buffer))
+                if target.owner not in (-1, state.my_id):
+                    send_floor = int(math.ceil(required_ships_at_arrival(source, target, params) * params.post_capture_buffer))
                 if target.owner == state.my_id:
                     send_floor = max(send_floor, int(math.ceil(target.ships * 0.6)))
                 if score <= 0 and not _allow_break_even_conversion_target(

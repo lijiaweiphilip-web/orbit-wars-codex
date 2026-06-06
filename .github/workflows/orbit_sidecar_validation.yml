@@ -1,0 +1,257 @@
+name: Orbit Sidecar Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      games:
+        description: Total games requested for the validation sweep
+        required: true
+        default: "40"
+      episode_steps:
+        description: Episode step cap per game
+        required: true
+        default: "500"
+      seed_start:
+        description: Starting seed for the sequential seed bank
+        required: true
+        default: "20260606"
+      seed_count:
+        description: Number of sequential seeds to evaluate
+        required: true
+        default: "40"
+      mode:
+        description: Validation mode set, for example 2p, 4p, or 2p,4p
+        required: true
+        default: "2p,4p"
+      variant:
+        description: baseline, neural_v2, neural_v3, candidate_only, no_penalty, or top16
+        required: true
+        default: "neural_v3"
+
+jobs:
+  lint_and_tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pandas
+
+      - name: Run pytest
+        run: python -m pytest -q
+
+  package_smoke:
+    runs-on: ubuntu-latest
+    needs: lint_and_tests
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pandas
+
+      - name: Package/runtime sidecar gate
+        run: |
+          python tools/ci_package_runtime_gate.py --skip-pytest
+
+      - name: Upload package gate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-package-runtime-gate
+          path: experiments/nn_ranker_v1/phase5_sidecar/package_runtime_gate_report.md
+          retention-days: 7
+
+  validation_matrix:
+    runs-on: ubuntu-latest
+    needs: package_smoke
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pandas
+
+      - name: Resolve package paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASELINE="experiments/nn_ranker_v1/frozen_baseline/submission_10_swarm_surplus_arrival_v1.zip"
+          case "${{ inputs.variant }}" in
+            baseline)
+              CHALLENGER="$BASELINE"
+              ;;
+            neural_v2)
+              CHALLENGER="experiments/nn_ranker_v1/phase4_neural_branch/submission_neural_ranker_v2.zip"
+              ;;
+            neural_v3)
+              CHALLENGER="experiments/nn_ranker_v1/phase4_rollout_repair/submission_neural_ranker_v3.zip"
+              ;;
+            candidate_only)
+              CHALLENGER="experiments/nn_ranker_v1/phase4_ablation/candidate_only/submission_candidate_only.zip"
+              ;;
+            no_penalty)
+              CHALLENGER="experiments/nn_ranker_v1/phase4_ablation/no_penalty/submission_no_penalty.zip"
+              ;;
+            top16)
+              CHALLENGER="experiments/nn_ranker_v1/phase4_ablation/top16/submission_top16.zip"
+              ;;
+            *)
+              echo "Unsupported variant: ${{ inputs.variant }}" >&2
+              exit 1
+              ;;
+          esac
+          echo "BASELINE=$BASELINE" >> "$GITHUB_ENV"
+          echo "CHALLENGER=$CHALLENGER" >> "$GITHUB_ENV"
+
+      - name: Run validation shard
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOTAL_SHARDS=4
+          REQUESTED_GAMES=${{ inputs.games }}
+          TOTAL_GAMES=${{ inputs.seed_count }}
+          if [ "$REQUESTED_GAMES" != "$TOTAL_GAMES" ]; then
+            echo "Warning: games=$REQUESTED_GAMES differs from seed_count=$TOTAL_GAMES; sidecar uses seed_count as authoritative shard count."
+          fi
+          SHARD=${{ matrix.shard }}
+          BASE=$(( TOTAL_GAMES / TOTAL_SHARDS ))
+          REM=$(( TOTAL_GAMES % TOTAL_SHARDS ))
+          if [ "$SHARD" -lt "$REM" ]; then
+            SHARD_GAMES=$(( BASE + 1 ))
+            OFFSET=$(( SHARD * (BASE + 1) ))
+          else
+            SHARD_GAMES=$BASE
+            OFFSET=$(( REM * (BASE + 1) + (SHARD - REM) * BASE ))
+          fi
+          if [ "$SHARD_GAMES" -le 0 ]; then
+            mkdir -p experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation
+            printf "mode,seed,challenger_score,baseline_score,score_delta,challenger_rank,baseline_rank,elapsed_sec,statuses,step100,mission_usage\n" > "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
+            python - <<'PY'
+import json
+from pathlib import Path
+Path("experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation").mkdir(parents=True, exist_ok=True)
+Path("experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${{ matrix.shard }}.json").write_text(json.dumps({"games": 0, "rows": 0, "missing": False}, indent=2), encoding="utf-8")
+PY
+            exit 0
+          fi
+          SHARD_SEED=$(( ${{ inputs.seed_start }} + OFFSET ))
+          OUTDIR="experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/run_shard_${SHARD}"
+          python tools/validate_orbit_packages.py \
+            --baseline "$BASELINE" \
+            --challenger "$CHALLENGER" \
+            --games "$SHARD_GAMES" \
+            --episode-steps "${{ inputs.episode_steps }}" \
+            --modes "${{ inputs.mode }}" \
+            --seed "$SHARD_SEED" \
+            --output-dir "$OUTDIR"
+          cp "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
+          python - "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json" <<'PY'
+import csv
+import json
+import sys
+
+rows = list(csv.DictReader(open(sys.argv[1], encoding="utf-8")))
+summary = {
+    "rows": len(rows),
+    "score_delta_mean": round(sum(float(r["score_delta"]) for r in rows) / max(1, len(rows)), 3),
+    "challenger_rank_mean": round(sum(float(r["challenger_rank"]) for r in rows) / max(1, len(rows)), 3),
+    "modes": {},
+}
+for row in rows:
+    summary["modes"][row["mode"]] = summary["modes"].get(row["mode"], 0) + 1
+with open(sys.argv[2], "w", encoding="utf-8") as fh:
+    json.dump(summary, fh, indent=2, sort_keys=True)
+PY
+
+      - name: Upload validation shard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-validation-shard-${{ matrix.shard }}
+          path: |
+            experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${{ matrix.shard }}.csv
+            experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${{ matrix.shard }}.json
+            experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/run_shard_${{ matrix.shard }}/failure_cases.jsonl
+          retention-days: 7
+
+  aggregate_validation:
+    runs-on: ubuntu-latest
+    needs: validation_matrix
+    if: always()
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pandas
+
+      - name: Download shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sidecar-validation-shard-*
+          path: experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation
+          merge-multiple: true
+
+      - name: Aggregate validation shards
+        run: |
+          python tools/aggregate_github_action_validation.py \
+            --input-dir experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation \
+            --output-dir experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation \
+            --expected-shards 4
+
+      - name: Upload aggregate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-validation-aggregate
+          path: |
+            experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/aggregate_report.md
+            experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/failure_cases.jsonl
+          retention-days: 14
+
+  upload_reports:
+    runs-on: ubuntu-latest
+    needs: aggregate_validation
+    if: always()
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload sidecar report scaffold
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-runbook
+          path: experiments/nn_ranker_v1/phase5_sidecar/SIDECAR_RUNBOOK.md
+          retention-days: 14
