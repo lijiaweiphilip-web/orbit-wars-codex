@@ -27,6 +27,23 @@ on:
         description: baseline, neural_v2, neural_v3, candidate_only, no_penalty, or top16
         required: true
         default: "neural_v3"
+  push:
+    branches:
+      - phase5-sidecar-ci
+    paths:
+      - ".github/workflows/orbit_sidecar_validation.yml"
+      - "tools/**"
+      - "orbitwars/**"
+      - "tests/**"
+      - "experiments/nn_ranker_v1/**"
+
+env:
+  SIDECAR_GAMES: ${{ github.event.inputs.games || '80' }}
+  SIDECAR_EPISODE_STEPS: ${{ github.event.inputs.episode_steps || '500' }}
+  SIDECAR_SEED_START: ${{ github.event.inputs.seed_start || '20261000' }}
+  SIDECAR_SEED_COUNT: ${{ github.event.inputs.seed_count || '80' }}
+  SIDECAR_MODE: ${{ github.event.inputs.mode || '2p,4p' }}
+  SIDECAR_VARIANT: ${{ github.event.inputs.variant || 'neural_v3' }}
 
 jobs:
   lint_and_tests:
@@ -103,7 +120,7 @@ jobs:
         run: |
           set -euo pipefail
           BASELINE="experiments/nn_ranker_v1/frozen_baseline/submission_10_swarm_surplus_arrival_v1.zip"
-          case "${{ inputs.variant }}" in
+          case "${SIDECAR_VARIANT}" in
             baseline)
               CHALLENGER="$BASELINE"
               ;;
@@ -123,7 +140,7 @@ jobs:
               CHALLENGER="experiments/nn_ranker_v1/phase4_ablation/top16/submission_top16.zip"
               ;;
             *)
-              echo "Unsupported variant: ${{ inputs.variant }}" >&2
+              echo "Unsupported variant: ${SIDECAR_VARIANT}" >&2
               exit 1
               ;;
           esac
@@ -135,8 +152,8 @@ jobs:
         run: |
           set -euo pipefail
           TOTAL_SHARDS=4
-          REQUESTED_GAMES=${{ inputs.games }}
-          TOTAL_GAMES=${{ inputs.seed_count }}
+          REQUESTED_GAMES=${SIDECAR_GAMES}
+          TOTAL_GAMES=${SIDECAR_SEED_COUNT}
           if [ "$REQUESTED_GAMES" != "$TOTAL_GAMES" ]; then
             echo "Warning: games=$REQUESTED_GAMES differs from seed_count=$TOTAL_GAMES; sidecar uses seed_count as authoritative shard count."
           fi
@@ -161,14 +178,14 @@ Path("experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${
 PY
             exit 0
           fi
-          SHARD_SEED=$(( ${{ inputs.seed_start }} + OFFSET ))
+          SHARD_SEED=$(( SIDECAR_SEED_START + OFFSET ))
           OUTDIR="experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/run_shard_${SHARD}"
           python tools/validate_orbit_packages.py \
             --baseline "$BASELINE" \
             --challenger "$CHALLENGER" \
             --games "$SHARD_GAMES" \
-            --episode-steps "${{ inputs.episode_steps }}" \
-            --modes "${{ inputs.mode }}" \
+            --episode-steps "${SIDECAR_EPISODE_STEPS}" \
+            --modes "${SIDECAR_MODE}" \
             --seed "$SHARD_SEED" \
             --output-dir "$OUTDIR"
           cp "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
