@@ -180,7 +180,7 @@ jobs:
           fi
           if [ "${SIDECAR_GAMES}" = "hard_seed_bank" ]; then
             SEED_FILE="experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}_seeds.json"
-            python - <<'PY' "$ACTIVE_SHARDS" "$SHARD" "$SEED_FILE"
+            python - "$ACTIVE_SHARDS" "$SHARD" "$SEED_FILE" <<'PY'
 import json, sys
 from pathlib import Path
 active = int(sys.argv[1])
