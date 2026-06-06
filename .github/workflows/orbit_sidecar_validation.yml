@@ -170,12 +170,7 @@ jobs:
           if [ "$SHARD_GAMES" -le 0 ]; then
             mkdir -p experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation
             printf "mode,seed,challenger_score,baseline_score,score_delta,challenger_rank,baseline_rank,elapsed_sec,statuses,step100,mission_usage\n" > "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
-            python - <<'PY'
-import json
-from pathlib import Path
-Path("experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation").mkdir(parents=True, exist_ok=True)
-Path("experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${{ matrix.shard }}.json").write_text(json.dumps({"games": 0, "rows": 0, "missing": False}, indent=2), encoding="utf-8")
-PY
+            python -c "import json; from pathlib import Path; Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation').mkdir(parents=True, exist_ok=True); Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json').write_text(json.dumps({'games': 0, 'rows': 0, 'missing': False}, indent=2), encoding='utf-8')"
             exit 0
           fi
           SHARD_SEED=$(( SIDECAR_SEED_START + OFFSET ))
@@ -189,23 +184,7 @@ PY
             --seed "$SHARD_SEED" \
             --output-dir "$OUTDIR"
           cp "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
-          python - "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json" <<'PY'
-import csv
-import json
-import sys
-
-rows = list(csv.DictReader(open(sys.argv[1], encoding="utf-8")))
-summary = {
-    "rows": len(rows),
-    "score_delta_mean": round(sum(float(r["score_delta"]) for r in rows) / max(1, len(rows)), 3),
-    "challenger_rank_mean": round(sum(float(r["challenger_rank"]) for r in rows) / max(1, len(rows)), 3),
-    "modes": {},
-}
-for row in rows:
-    summary["modes"][row["mode"]] = summary["modes"].get(row["mode"], 0) + 1
-with open(sys.argv[2], "w", encoding="utf-8") as fh:
-    json.dump(summary, fh, indent=2, sort_keys=True)
-PY
+          python -c "import csv, json, sys; rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8'))); summary = {'rows': len(rows), 'score_delta_mean': round(sum(float(r['score_delta']) for r in rows) / max(1, len(rows)), 3), 'challenger_rank_mean': round(sum(float(r['challenger_rank']) for r in rows) / max(1, len(rows)), 3), 'modes': {}}; [summary['modes'].__setitem__(row['mode'], summary['modes'].get(row['mode'], 0) + 1) for row in rows]; json.dump(summary, open(sys.argv[2], 'w', encoding='utf-8'), indent=2, sort_keys=True)" "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json"
 
       - name: Upload validation shard artifact
         uses: actions/upload-artifact@v4
