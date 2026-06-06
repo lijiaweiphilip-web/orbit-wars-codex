@@ -24,9 +24,13 @@ on:
         required: true
         default: "2p,4p"
       variant:
-        description: baseline, neural_v2, neural_v3, candidate_only, no_penalty, or top16
+        description: baseline, neural_v2, neural_v3, candidate_only, no_penalty, top16, candidate_only_less_snipe_sweep, top_candidate_only_configs, or neural_v2_proxy_top8_stabilized
         required: true
         default: "neural_v3"
+      matrix_shard_count:
+        description: Number of active validation shards (up to 8)
+        required: true
+        default: "4"
   push:
     branches:
       - phase5-sidecar-ci
@@ -44,6 +48,7 @@ env:
   SIDECAR_SEED_COUNT: ${{ github.event.inputs.seed_count || '80' }}
   SIDECAR_MODE: ${{ github.event.inputs.mode || '2p,4p' }}
   SIDECAR_VARIANT: ${{ github.event.inputs.variant || 'neural_v3' }}
+  SIDECAR_SHARD_COUNT: ${{ github.event.inputs.matrix_shard_count || '4' }}
 
 jobs:
   lint_and_tests:
@@ -100,7 +105,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
 
     steps:
       - uses: actions/checkout@v4
@@ -133,11 +138,20 @@ jobs:
             candidate_only)
               CHALLENGER="experiments/nn_ranker_v1/phase4_ablation/candidate_only/submission_candidate_only.zip"
               ;;
+            candidate_only_less_snipe_sweep)
+              CHALLENGER="experiments/submission_day_plan_20260606/submitted_zips/final_candidate_only_less_snipe_tuned.zip"
+              ;;
+            top_candidate_only_configs)
+              CHALLENGER="experiments/submission_day_plan_20260606/submitted_zips/final_candidate_only_less_snipe_tuned.zip"
+              ;;
             no_penalty)
               CHALLENGER="experiments/nn_ranker_v1/phase4_ablation/no_penalty/submission_no_penalty.zip"
               ;;
             top16)
               CHALLENGER="experiments/nn_ranker_v1/phase4_ablation/top16/submission_top16.zip"
+              ;;
+            neural_v2_proxy_top8_stabilized)
+              CHALLENGER="experiments/submission_day_plan_20260606/submitted_zips/submission_S1_neural_v2_proxy_top8.zip"
               ;;
             *)
               echo "Unsupported variant: ${SIDECAR_VARIANT}" >&2
@@ -151,38 +165,86 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TOTAL_SHARDS=4
-          REQUESTED_GAMES=${SIDECAR_GAMES}
-          TOTAL_GAMES=${SIDECAR_SEED_COUNT}
-          if [ "$REQUESTED_GAMES" != "$TOTAL_GAMES" ]; then
-            echo "Warning: games=$REQUESTED_GAMES differs from seed_count=$TOTAL_GAMES; sidecar uses seed_count as authoritative shard count."
-          fi
           SHARD=${{ matrix.shard }}
-          BASE=$(( TOTAL_GAMES / TOTAL_SHARDS ))
-          REM=$(( TOTAL_GAMES % TOTAL_SHARDS ))
-          if [ "$SHARD" -lt "$REM" ]; then
-            SHARD_GAMES=$(( BASE + 1 ))
-            OFFSET=$(( SHARD * (BASE + 1) ))
-          else
-            SHARD_GAMES=$BASE
-            OFFSET=$(( REM * (BASE + 1) + (SHARD - REM) * BASE ))
-          fi
-          if [ "$SHARD_GAMES" -le 0 ]; then
-            mkdir -p experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation
+          ACTIVE_SHARDS=${SIDECAR_SHARD_COUNT}
+          mkdir -p experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation
+          if [ "$SHARD" -ge "$ACTIVE_SHARDS" ]; then
             printf "mode,seed,challenger_score,baseline_score,score_delta,challenger_rank,baseline_rank,elapsed_sec,statuses,step100,mission_usage\n" > "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
-            python -c "import json; from pathlib import Path; Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation').mkdir(parents=True, exist_ok=True); Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json').write_text(json.dumps({'games': 0, 'rows': 0, 'missing': False}, indent=2), encoding='utf-8')"
+            python -c "import json; from pathlib import Path; Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation').mkdir(parents=True, exist_ok=True); Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json').write_text(json.dumps({'games': 0, 'rows': 0, 'skipped': True}, indent=2), encoding='utf-8')"
             exit 0
           fi
-          SHARD_SEED=$(( SIDECAR_SEED_START + OFFSET ))
           OUTDIR="experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/run_shard_${SHARD}"
-          python tools/validate_orbit_packages.py \
-            --baseline "$BASELINE" \
-            --challenger "$CHALLENGER" \
-            --games "$SHARD_GAMES" \
-            --episode-steps "${SIDECAR_EPISODE_STEPS}" \
-            --modes "${SIDECAR_MODE}" \
-            --seed "$SHARD_SEED" \
-            --output-dir "$OUTDIR"
+          EFFECTIVE_MODE="${SIDECAR_MODE}"
+          if [ "$EFFECTIVE_MODE" = "both" ]; then
+            EFFECTIVE_MODE="2p,4p"
+          fi
+          if [ "${SIDECAR_GAMES}" = "hard_seed_bank" ]; then
+            SEED_FILE="experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}_seeds.json"
+            python - <<'PY' "$ACTIVE_SHARDS" "$SHARD" "$SEED_FILE"
+import json, sys
+from pathlib import Path
+active = int(sys.argv[1])
+shard = int(sys.argv[2])
+seed_file = Path(sys.argv[3])
+payload = json.loads(Path("experiments/gold_gap_20260606/hard_seed_bank.json").read_text(encoding="utf-8"))
+seen = set()
+seeds = []
+for value in payload.values():
+    if not isinstance(value, list):
+        continue
+    for item in value:
+        seed = int(item["seed"]) if isinstance(item, dict) else int(item)
+        if seed not in seen:
+            seeds.append(seed)
+            seen.add(seed)
+shard_seeds = seeds[shard::active]
+seed_file.write_text(json.dumps(shard_seeds, indent=2), encoding="utf-8")
+PY
+            SHARD_GAMES=$(python -c "import json; import sys; print(len(json.load(open(sys.argv[1], encoding='utf-8'))))" "$SEED_FILE")
+            if [ "$SHARD_GAMES" -le 0 ]; then
+              printf "mode,seed,challenger_score,baseline_score,score_delta,challenger_rank,baseline_rank,elapsed_sec,statuses,step100,mission_usage\n" > "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
+              python -c "import json; from pathlib import Path; Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json').write_text(json.dumps({'games': 0, 'rows': 0, 'missing': False}, indent=2), encoding='utf-8')"
+              exit 0
+            fi
+            python tools/validate_orbit_packages.py \
+              --baseline "$BASELINE" \
+              --challenger "$CHALLENGER" \
+              --games 1 \
+              --episode-steps "${SIDECAR_EPISODE_STEPS}" \
+              --modes "$EFFECTIVE_MODE" \
+              --seed-list-file "$SEED_FILE" \
+              --output-dir "$OUTDIR"
+          else
+            TOTAL_SHARDS=$ACTIVE_SHARDS
+            REQUESTED_GAMES=${SIDECAR_GAMES}
+            TOTAL_GAMES=${SIDECAR_SEED_COUNT}
+            if [ "$REQUESTED_GAMES" != "$TOTAL_GAMES" ]; then
+              echo "Warning: games=$REQUESTED_GAMES differs from seed_count=$TOTAL_GAMES; sidecar uses seed_count as authoritative shard count."
+            fi
+            BASE=$(( TOTAL_GAMES / TOTAL_SHARDS ))
+            REM=$(( TOTAL_GAMES % TOTAL_SHARDS ))
+            if [ "$SHARD" -lt "$REM" ]; then
+              SHARD_GAMES=$(( BASE + 1 ))
+              OFFSET=$(( SHARD * (BASE + 1) ))
+            else
+              SHARD_GAMES=$BASE
+              OFFSET=$(( REM * (BASE + 1) + (SHARD - REM) * BASE ))
+            fi
+            if [ "$SHARD_GAMES" -le 0 ]; then
+              printf "mode,seed,challenger_score,baseline_score,score_delta,challenger_rank,baseline_rank,elapsed_sec,statuses,step100,mission_usage\n" > "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
+              python -c "import json; from pathlib import Path; Path('experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json').write_text(json.dumps({'games': 0, 'rows': 0, 'missing': False}, indent=2), encoding='utf-8')"
+              exit 0
+            fi
+            SHARD_SEED=$(( SIDECAR_SEED_START + OFFSET ))
+            python tools/validate_orbit_packages.py \
+              --baseline "$BASELINE" \
+              --challenger "$CHALLENGER" \
+              --games "$SHARD_GAMES" \
+              --episode-steps "${SIDECAR_EPISODE_STEPS}" \
+              --modes "$EFFECTIVE_MODE" \
+              --seed "$SHARD_SEED" \
+              --output-dir "$OUTDIR"
+          fi
           cp "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.csv"
           python -c "import csv, json, sys; rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8'))); summary = {'rows': len(rows), 'score_delta_mean': round(sum(float(r['score_delta']) for r in rows) / max(1, len(rows)), 3), 'challenger_rank_mean': round(sum(float(r['challenger_rank']) for r in rows) / max(1, len(rows)), 3), 'modes': {}}; [summary['modes'].__setitem__(row['mode'], summary['modes'].get(row['mode'], 0) + 1) for row in rows]; json.dump(summary, open(sys.argv[2], 'w', encoding='utf-8'), indent=2, sort_keys=True)" "$OUTDIR/results.csv" "experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation/shard_${SHARD}.json"
 
@@ -226,7 +288,7 @@ jobs:
           python tools/aggregate_github_action_validation.py \
             --input-dir experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation \
             --output-dir experiments/nn_ranker_v1/phase5_sidecar/github_actions_validation \
-            --expected-shards 4
+            --expected-shards ${SIDECAR_SHARD_COUNT}
 
       - name: Upload aggregate artifact
         uses: actions/upload-artifact@v4

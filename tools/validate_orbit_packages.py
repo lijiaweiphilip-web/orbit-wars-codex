@@ -117,6 +117,32 @@ def _run_paired_game(
     }
 
 
+def _load_seed_list(path: Path) -> list[int]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        items = payload
+    elif isinstance(payload, dict):
+        items = []
+        for value in payload.values():
+            if isinstance(value, list):
+                items.extend(value)
+    else:
+        raise RuntimeError(f"Unsupported seed list payload in {path}")
+    seeds: list[int] = []
+    for item in items:
+        if isinstance(item, int):
+            seeds.append(item)
+        elif isinstance(item, dict) and "seed" in item:
+            seeds.append(int(item["seed"]))
+    deduped: list[int] = []
+    seen: set[int] = set()
+    for seed in seeds:
+        if seed not in seen:
+            deduped.append(seed)
+            seen.add(seed)
+    return deduped
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Package-vs-package hard validation for Orbit Wars submissions.")
     parser.add_argument("--baseline", required=True)
@@ -125,6 +151,7 @@ def main() -> None:
     parser.add_argument("--episode-steps", type=int, default=500)
     parser.add_argument("--modes", default="2p,4p")
     parser.add_argument("--seed", type=int, default=20260605)
+    parser.add_argument("--seed-list-file", default="")
     parser.add_argument("--output-dir", default="experiments/nn_ranker_v1/hard_validation")
     args = parser.parse_args()
 
@@ -136,13 +163,18 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     try:
-        for game_idx in range(args.games):
+        explicit_seeds = _load_seed_list(Path(args.seed_list_file)) if args.seed_list_file else []
+        if explicit_seeds:
+            seed_schedule = explicit_seeds
+        else:
+            seed_schedule = [args.seed + game_idx for game_idx in range(args.games)]
+        for game_idx, scheduled_seed in enumerate(seed_schedule):
             mode = modes[game_idx % len(modes)]
             row = _run_paired_game(
                 baseline_agent,
                 challenger_agent,
                 mode=mode,
-                seed=args.seed + game_idx,
+                seed=scheduled_seed,
                 episode_steps=args.episode_steps,
             )
             rows.append(row)

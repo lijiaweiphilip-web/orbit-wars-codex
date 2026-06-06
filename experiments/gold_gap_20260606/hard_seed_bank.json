@@ -1,0 +1,400 @@
+{
+  "2p_reversal_seeds": [
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -11925.0,
+      "seed": 20260680,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -4190.0,
+      "seed": 20260680,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -4145.0,
+      "seed": 20260612,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -4145.0,
+      "seed": 20260612,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -3552.0,
+      "seed": 20260650,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -3531.0,
+      "seed": 20260650,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -3251.0,
+      "seed": 20260682,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "2p",
+      "reason": "negative_2p_reversal",
+      "score_delta": -3251.0,
+      "seed": 20260682,
+      "variant": "v3"
+    }
+  ],
+  "4p_catastrophic_loss_seeds": [
+    {
+      "challenger_rank": 4,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -24328.0,
+      "seed": 20260715,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -14170.0,
+      "seed": 20260715,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -12538.0,
+      "seed": 20260791,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -11818.0,
+      "seed": 20260717,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -11366.0,
+      "seed": 20260717,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -10891.0,
+      "seed": 20260791,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -9635.0,
+      "seed": 20260621,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "worst_4p_delta",
+      "score_delta": -8972.0,
+      "seed": 20260779,
+      "variant": "v2"
+    }
+  ],
+  "high_comet_interference_seeds": [],
+  "leader_snowball_seeds": [
+    {
+      "challenger_rank": 4,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -24328.0,
+      "seed": 20260715,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -14170.0,
+      "seed": 20260715,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -12538.0,
+      "seed": 20260791,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -10891.0,
+      "seed": 20260791,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -9635.0,
+      "seed": 20260621,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -8972.0,
+      "seed": 20260779,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -7889.0,
+      "seed": 20260803,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "leader_margin_step100",
+      "score_delta": -7782.0,
+      "seed": 20260803,
+      "variant": "v3"
+    }
+  ],
+  "snipe_overfit_seeds": [
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -9635.0,
+      "seed": 20260621,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -8972.0,
+      "seed": 20260779,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -7615.0,
+      "seed": 20260651,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -7615.0,
+      "seed": 20260651,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -7559.0,
+      "seed": 20260641,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -7458.0,
+      "seed": 20260771,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -5585.0,
+      "seed": 20260621,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_snipe_negative_delta",
+      "score_delta": -4444.0,
+      "seed": 20260779,
+      "variant": "v3"
+    }
+  ],
+  "sun_geometry_dangerous_seeds": [],
+  "symmetric_deadlock_seeds": [
+    {
+      "challenger_rank": 4,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": -1847.0,
+      "seed": 20260637,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 4,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": -1644.0,
+      "seed": 20260661,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 4,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": -1297.0,
+      "seed": 20260661,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": 1347.0,
+      "seed": 20260799,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 1,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": 2242.0,
+      "seed": 20260753,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 1,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": 3399.0,
+      "seed": 20260793,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 1,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": 5249.0,
+      "seed": 20260793,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 1,
+      "mode": "4p",
+      "reason": "tight_step100_score_band",
+      "score_delta": 7015.0,
+      "seed": 20260669,
+      "variant": "v2"
+    }
+  ],
+  "weak_harvest_backfire_seeds": [
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -12538.0,
+      "seed": 20260791,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -11818.0,
+      "seed": 20260717,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -11366.0,
+      "seed": 20260717,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -10891.0,
+      "seed": 20260791,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 2,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -7889.0,
+      "seed": 20260803,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -7615.0,
+      "seed": 20260651,
+      "variant": "v2"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -7615.0,
+      "seed": 20260651,
+      "variant": "v3"
+    },
+    {
+      "challenger_rank": 3,
+      "mode": "4p",
+      "reason": "high_weak_harvest_negative_delta",
+      "score_delta": -7559.0,
+      "seed": 20260641,
+      "variant": "v3"
+    }
+  ]
+}
