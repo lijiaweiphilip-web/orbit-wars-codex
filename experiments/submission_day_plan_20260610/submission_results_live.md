@@ -6,7 +6,7 @@ Latest refresh: `2026-06-11T16:51:20+08:00`
 
 | slot | package | Kaggle ref | message | status | latest public score |
 |---:|---|---:|---|---|---|
-| 1 | `N3_top8_home_guard_plus.zip` | `53563011` | `rerun_N3_top8_home_guard_plus_current_main_510_20260611_slot1` | `PENDING` | `PENDING` |
+| 1 | `N3_top8_home_guard_plus.zip` | `53563011` | `rerun_N3_top8_home_guard_plus_current_main_510_20260611_slot1` | `COMPLETE` | `491.3` |
 
 Guardrail: one Kaggle submission only. No N7, no second submission, no SHA-X learned scorer.
 
