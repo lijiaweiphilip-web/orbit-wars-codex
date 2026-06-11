@@ -1,21 +1,32 @@
 {
-  "retry_plan": "A_walltime_5h30m_to_6h_keep_current_canary_workload",
-  "retry_notes": "Use this config only after L40S is available. Keep smoke_v2 canary workload unchanged and raise SLURM walltime to 05:30:00-06:00:00. Do not start Standard-RealLabel automatically.",
-  "output_dir": "experiments/sha_x1_real_label_v1_smoke_v2_canary_retry_A_walltime",
   "episode_steps": 420,
   "horizon_steps": 360,
-  "random_seed": 20260610,
-  "seeds": [
-    2026061101,
-    2026061102
-  ],
+  "max_forced_labels": 320,
+  "max_output_gb": 3.0,
+  "max_states": 16,
+  "min_label_std": 1e-06,
+  "min_mission_profiles": 5,
+  "min_nonzero_delta_rate": 0.3,
+  "min_pairwise_rows": 128,
+  "missions_per_state": 20,
+  "output_dir": "experiments/sha_x1_real_label_v1_smoke_v2_canary_retry_A_walltime",
+  "package_paths": {
+    "b1000": "experiments/orbit_1000_baseline_v9_quick/packages/B1000_0000.zip",
+    "n2": "experiments/s1_top8_neighbor_engineering/packages/N2_top8_leader_penalty_plus.zip",
+    "n4": "experiments/s1_top8_neighbor_engineering/packages/N4_top8_third_party_steal_penalty_plus.zip",
+    "old_s1": "experiments/submission_day_plan_20260606/submitted_zips/submission_S1_neural_v2_proxy_top8.zip"
+  },
+  "pairwise_bottom_quantile": 0.2,
+  "pairwise_top_quantile": 0.2,
+  "partial_checkpoint_every_states": 2,
   "players": [
     2,
     4
   ],
-  "source_policies": [
-    "old_s1"
-  ],
+  "progress_every_labels": 24,
+  "random_seed": 20260610,
+  "retry_notes": "Use next L40S window only. Raise SLURM walltime to 05:30:00-06:00:00 and keep current canary workload. Do not start Standard-RealLabel automatically.",
+  "retry_plan": "A_walltime_5h30m_to_6h_keep_current_canary_workload",
   "sample_steps": [
     20,
     120,
@@ -23,26 +34,15 @@
     260,
     320
   ],
-  "max_states": 16,
-  "state_resample_bonus_states": 0,
-  "missions_per_state": 20,
-  "state_min_missions": 16,
+  "seeds": [
+    2026061101,
+    2026061102
+  ],
+  "source_policies": [
+    "old_s1"
+  ],
   "state_max_missions": 32,
-  "max_forced_labels": 320,
-  "state_resample_rounds": 0,
-  "partial_checkpoint_every_states": 2,
-  "pairwise_top_quantile": 0.2,
-  "pairwise_bottom_quantile": 0.2,
-  "progress_every_labels": 24,
-  "min_nonzero_delta_rate": 0.3,
-  "min_pairwise_rows": 128,
-  "min_label_std": 0.000001,
-  "min_mission_profiles": 5,
-  "max_output_gb": 3.0,
-  "package_paths": {
-    "old_s1": "experiments/submission_day_plan_20260606/submitted_zips/submission_S1_neural_v2_proxy_top8.zip",
-    "n2": "experiments/s1_top8_neighbor_engineering/packages/N2_top8_leader_penalty_plus.zip",
-    "n4": "experiments/s1_top8_neighbor_engineering/packages/N4_top8_third_party_steal_penalty_plus.zip",
-    "b1000": "experiments/orbit_1000_baseline_v9_quick/packages/B1000_0000.zip"
-  }
+  "state_min_missions": 16,
+  "state_resample_bonus_states": 0,
+  "state_resample_rounds": 0
 }

@@ -1,0 +1,48 @@
+name: SHA-X CPU Sync
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sha-x-cpu-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Static guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python orbit_wars_sha_x_github_cpu_sync_v1/scripts/ci_sha_x_static_guard.py \
+            --repo-root . \
+            --output-dir experiments/sha_x_github_cpu_sync_v1
+
+      - name: Generate canary retry configs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python orbit_wars_sha_x_github_cpu_sync_v1/scripts/generate_canary_retry_configs.py \
+            --repo-root . \
+            --output-dir experiments/sha_x_github_cpu_sync_v1
+
+      - name: Build artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python orbit_wars_sha_x_github_cpu_sync_v1/scripts/build_github_artifact.py \
+            --repo-root . \
+            --output-dir experiments/sha_x_github_cpu_sync_v1 \
+            --artifact sha_x_cpu_sync_artifacts_20260611.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sha_x_cpu_sync_artifacts_20260611.zip
+          path: experiments/sha_x_github_cpu_sync_v1/sha_x_cpu_sync_artifacts_20260611.zip
+          if-no-files-found: error

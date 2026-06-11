@@ -1,0 +1,17 @@
+{
+  "forbidden_kaggle_submit_hits": [],
+  "large_label_or_weight_hits": [],
+  "missing": [],
+  "no_head_node_python": true,
+  "no_kaggle_submission_from_guard": true,
+  "no_ntu_gpu_job": true,
+  "py_compile_errors": [],
+  "sbatch_checks": {
+    "gpu_1": true,
+    "no_tc2n01_02_request": true,
+    "nodelist_l40s": true,
+    "nodes_1": true
+  },
+  "secret_or_credential_hits": [],
+  "status": "PASS"
+}

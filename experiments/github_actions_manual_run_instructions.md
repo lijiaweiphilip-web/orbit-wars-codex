@@ -13,14 +13,16 @@ GitHub only exposes new `workflow_dispatch` workflows after the workflow file is
 ## Current Commit
 
 - branch: `phase5-sidecar-ci`
-- dispatch-attempt commit: `0baf4e03b7dedc23dfd13f78f9df4ca36d393583`
+- final pushed commit: `dca9f5942a7c44a0ef1c902b56cd11d0e303fe8d`
 - commit message: `sha-x cpu sidecar and canary retry configs`
 
-## Manual Run Path
+## Safe Paths For Tomorrow
+
+### Path A: Remote GitHub Actions Validation
 
 1. Open a PR from `phase5-sidecar-ci` to the repository default branch.
-2. Review that the PR contains only SHA-X CPU sidecar workflow/config/docs/script changes.
-3. Merge or otherwise place `.github/workflows/sha_x_cpu_sidecar.yml` on the default branch.
+2. Review that the PR contains only SHA-X CPU sidecar workflow/config/docs/safe partial-checkpoint patch changes.
+3. Merge only that safe workflow/config/docs/script patch to the default branch.
 4. In GitHub Actions, select `SHA-X CPU Sidecar`.
 5. Use `Run workflow`.
 6. Select ref `phase5-sidecar-ci` if GitHub offers a ref selector; otherwise run on the default branch after the workflow lands.
@@ -34,6 +36,19 @@ GitHub only exposes new `workflow_dispatch` workflows after the workflow file is
    - no Kaggle submit command
    - no token/credential pattern
    - artifact upload
+
+### Path B: No Remote Validation
+
+Do not merge the workflow yet. Keep the local artifact and current pushed branch as the CPU sidecar record. When L40S is available, resume from canary retry A/B only; do not jump to standard/full standard.
+
+## Final Status
+
+- CPU sidecar local validation: `PASS`
+- remote GitHub Actions: `PENDING_DEFAULT_BRANCH`
+- Kaggle submission: `NO`
+- NTU GPU job: `NO`
+- secrets used: `NO`
+- NTU head-node project Python: `NO`
 
 ## Artifact
 

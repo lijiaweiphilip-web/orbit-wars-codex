@@ -5,7 +5,7 @@ Date: `2026-06-11`
 ## Git State
 
 - branch: `phase5-sidecar-ci`
-- dispatch-attempt commit: `0baf4e03b7dedc23dfd13f78f9df4ca36d393583`
+- final pushed commit: `dca9f5942a7c44a0ef1c902b56cd11d0e303fe8d`
 - commit message: `sha-x cpu sidecar and canary retry configs`
 - pushed: yes, to `origin/phase5-sidecar-ci`
 
@@ -13,9 +13,10 @@ Date: `2026-06-11`
 
 - workflow: `.github/workflows/sha_x_cpu_sidecar.yml`
 - workflow run URL: `NOT_AVAILABLE`
-- trigger status: `BLOCKED_BY_GITHUB_DEFAULT_BRANCH_VISIBILITY`
+- trigger status: `REMOTE_WORKFLOW_NOT_RUN_BECAUSE_WORKFLOW_NOT_ON_DEFAULT_BRANCH`
 - trigger command attempted: `gh workflow run sha_x_cpu_sidecar.yml --ref phase5-sidecar-ci`
 - GitHub response: `HTTP 404: workflow sha_x_cpu_sidecar.yml not found on the default branch`
+- interpretation: this is not a SHA-X failure and not a CPU sidecar failure; GitHub did not create a run because the new workflow is not yet visible from the default branch
 
 ## Validation Status
 
@@ -27,13 +28,22 @@ Date: `2026-06-11`
 | no TC2N01/TC2N02 request | PASS | canary sbatch does not request TC2N01/TC2N02 |
 | no Kaggle CLI submit | PASS | sidecar scope has no forbidden Kaggle CLI submission command |
 | no token/credential pattern | PASS | sidecar scope passed local forbidden-pattern check |
-| artifact upload | NOT_RUN_REMOTE | remote workflow could not be dispatched before default-branch visibility |
+| artifact upload | PENDING_DEFAULT_BRANCH | remote workflow could not be dispatched before default-branch visibility |
 
 ## Artifact
 
 - expected artifact name: `sha_x_cpu_sidecar_artifacts_20260610.zip`
 - local artifact generated: yes
 - remote artifact generated: no, workflow dispatch blocked before run creation
+
+## Final Status
+
+- CPU sidecar local validation: `PASS`
+- remote GitHub Actions: `PENDING_DEFAULT_BRANCH`
+- Kaggle submission: `NO`
+- NTU GPU job: `NO`
+- secrets used: `NO`
+- NTU head-node project Python: `NO`
 
 ## Safety Guardrails
 
@@ -46,4 +56,4 @@ Date: `2026-06-11`
 
 ## Next Step
 
-Make the workflow visible to GitHub Actions through the normal PR/default-branch path, then manually run `SHA-X CPU Sidecar`. The next GPU action, when L40S is available, remains canary retry A/B only, not full standard.
+No more action today. If remote validation is needed tomorrow, use one of the safe paths in `experiments/github_actions_manual_run_instructions.md`. The next GPU action, when L40S is available, remains canary retry A/B only, not full standard.
