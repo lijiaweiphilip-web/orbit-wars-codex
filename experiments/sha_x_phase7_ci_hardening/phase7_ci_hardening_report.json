@@ -1,0 +1,161 @@
+{
+  "artifact": {
+    "artifact": "experiments\\sha_x_phase7_ci_hardening\\sha_x_phase7_ci_hardening_artifacts_20260611.zip",
+    "artifact_bytes": 11428,
+    "files": [
+      "experiments/sha_x_phase7_ci_hardening/phase7_ci_hardening_report.md",
+      "experiments/sha_x_phase7_ci_hardening/phase7_ci_hardening_report.json",
+      "experiments/sha_x_phase7_ci_hardening/reward_component_unit_test_report.md",
+      "experiments/sha_x_phase7_ci_hardening/trace_diff_parser_test_report.md",
+      "experiments/sha_x_phase7_ci_hardening/pairwise_builder_test_report.md",
+      "experiments/sha_x_phase7_ci_hardening/sbatch_safety_lint_report.md",
+      "experiments/sha_x_phase7_ci_hardening/no_secret_no_kaggle_submit_scan_report.md",
+      "experiments/sha_x_phase7_ci_hardening/partial_checkpoint_patch_report.md",
+      "experiments/sha_x_phase7_ci_hardening/next_l40s_canary_retry_instructions.md",
+      "orbit_wars_sha_x1_real_label_v1/configs/canary_retry_A_walltime_config.json",
+      "orbit_wars_sha_x1_real_label_v1/configs/canary_retry_B_halfworkload_config.json",
+      ".github/workflows/sha_x_phase7_ci_hardening.yml",
+      "orbit_wars_sha_x_github_cpu_sync_v1/scripts/phase7_cpu_mock_tests.py"
+    ],
+    "status": "PASS"
+  },
+  "github_actions_secrets_used": false,
+  "head_node_python_used": false,
+  "kaggle_submission_started": false,
+  "no_secret_no_submit_scan": {
+    "files_scanned": 8,
+    "kaggle_submit_execution_hits": [],
+    "secret_or_credential_hits": [],
+    "status": "PASS"
+  },
+  "ntu_gpu_job_started": false,
+  "pairwise_builder_test": {
+    "low_signal_states": [],
+    "pairwise_rows": 4,
+    "status": "PASS",
+    "tie_low_signal_states": [
+      "tie_state"
+    ],
+    "tie_pairwise_rows": 0,
+    "tie_status": "LOW_SIGNAL_STATE"
+  },
+  "reward_component_test": {
+    "all_components_nonempty_numeric": true,
+    "components": {
+      "leader_help_penalty": -2.52,
+      "planet_count_delta": 1.0,
+      "production_delta": 4.0,
+      "rank_delta": 3.0,
+      "ship_delta": 330.0,
+      "source_overdrain_penalty": -0.18000000000000005,
+      "target_capture": 1.0,
+      "top2_delta": 1.0,
+      "win_proxy": 1.0
+    },
+    "delta_reward": 211.36,
+    "missing": [],
+    "non_numeric": [],
+    "status": "PASS"
+  },
+  "sbatch_safety_lint": {
+    "checked_files": 6,
+    "files": [
+      {
+        "checks": {
+          "gpu_1": true,
+          "no_tc2n01_tc2n02": true,
+          "nodelist_l40s": true,
+          "nodes_1": true
+        },
+        "file": "orbit_wars_sha_x1_real_label_v1\\slurm\\00_kaggle_env_discovery.sbatch",
+        "status": "PASS"
+      },
+      {
+        "checks": {
+          "gpu_1": true,
+          "no_tc2n01_tc2n02": true,
+          "nodelist_l40s": true,
+          "nodes_1": true
+        },
+        "file": "orbit_wars_sha_x1_real_label_v1\\slurm\\00_t2v_kaggle_vendor_build.sbatch",
+        "status": "PASS"
+      },
+      {
+        "checks": {
+          "gpu_1": true,
+          "no_tc2n01_tc2n02": true,
+          "nodelist_l40s": true,
+          "nodes_1": true
+        },
+        "file": "orbit_wars_sha_x1_real_label_v1\\slurm\\01_real_label_smoke.sbatch",
+        "status": "PASS"
+      },
+      {
+        "checks": {
+          "gpu_1": true,
+          "no_tc2n01_tc2n02": true,
+          "nodelist_l40s": true,
+          "nodes_1": true
+        },
+        "file": "orbit_wars_sha_x1_real_label_v1\\slurm\\01_real_label_smoke_v2.sbatch",
+        "status": "PASS"
+      },
+      {
+        "checks": {
+          "gpu_1": true,
+          "no_tc2n01_tc2n02": true,
+          "nodelist_l40s": true,
+          "nodes_1": true
+        },
+        "file": "orbit_wars_sha_x1_real_label_v1\\slurm\\01_real_label_smoke_v2_canary.sbatch",
+        "status": "PASS"
+      },
+      {
+        "checks": {
+          "gpu_1": true,
+          "no_tc2n01_tc2n02": true,
+          "nodelist_l40s": true,
+          "nodes_1": true
+        },
+        "file": "orbit_wars_sha_x1_real_label_v1\\slurm\\standard_real_label_dry_run.sbatch",
+        "status": "PASS"
+      }
+    ],
+    "status": "PASS"
+  },
+  "status": "PASS",
+  "trace_diff_parser_test": {
+    "checks": {
+      "arrival_event": true,
+      "fleet_count": true,
+      "owner_change": true,
+      "source_ships": true,
+      "target_ships": true
+    },
+    "diff": {
+      "arrival_event": true,
+      "fleet_count": 1,
+      "leader_enemy_strength": -11.0,
+      "owner_change": true,
+      "planet_count": 1.0,
+      "production": 6.0,
+      "rank": 0.0,
+      "ship_total": 18.0,
+      "source_ships": {
+        "1": -42.0
+      },
+      "target_owner": -1,
+      "target_ships": -27.0,
+      "top2": 0.0,
+      "win_proxy": 0.0
+    },
+    "required_fields": [
+      "source_ships",
+      "target_ships",
+      "fleet_count",
+      "arrival_event",
+      "owner_change"
+    ],
+    "status": "PASS"
+  }
+}
