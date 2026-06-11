@@ -2,6 +2,10 @@ name: SHA-X CPU Sync
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - phase6-shax-cpu-sync
+      - phase6-shax-cpu-sync-*
 
 jobs:
   sha-x-cpu-sync:
