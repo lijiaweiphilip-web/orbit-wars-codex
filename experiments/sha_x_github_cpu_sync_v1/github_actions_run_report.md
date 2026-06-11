@@ -6,7 +6,7 @@ Date: `2026-06-11`
 
 - branch: `phase6-shax-cpu-sync`
 - sync pack commit: `fb47006`
-- branch head after N3 result update: `9030230`
+- latest branch head: see `origin/phase6-shax-cpu-sync`
 - commit message: `sha-x github cpu sync pack and one-submission handoff`
 - pushed: yes, to `origin/phase6-shax-cpu-sync`
 
