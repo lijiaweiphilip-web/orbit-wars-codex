@@ -1,0 +1,115 @@
+name: SHA-X CPU Sidecar
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cpu-sidecar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check package structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f orbit_wars_sha_x1_real_label_v1/CODEX_RUN_THIS_FIRST.md
+          test -f orbit_wars_sha_x1_real_label_v1/configs/smoke_v2_canary_config.json
+          test -f orbit_wars_sha_x1_real_label_v1/scripts/real_label_smoke.py
+          test -f orbit_wars_sha_x1_real_label_v1/slurm/01_real_label_smoke_v2_canary.sbatch
+
+      - name: Py-compile SHA-X scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile orbit_wars_sha_x1_real_label_v1/scripts/*.py
+
+      - name: Check canary sbatch safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          sbatch_file="orbit_wars_sha_x1_real_label_v1/slurm/01_real_label_smoke_v2_canary.sbatch"
+          grep -F '#SBATCH --nodes=1' "$sbatch_file"
+          grep -F '#SBATCH --nodelist=TC2N[03-08]' "$sbatch_file"
+          grep -F '#SBATCH --gres=gpu:1' "$sbatch_file"
+          if grep -Eq '^#SBATCH --nodelist=.*TC2N0[12]' "$sbatch_file"; then
+            echo "Canary sbatch requests TC2N01/TC2N02" >&2
+            exit 1
+          fi
+
+      - name: Check no Kaggle submit or credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden="$(printf 'kaggle competitions %s' 'submit')"
+          if grep -R "$forbidden" .github/workflows/sha_x_cpu_sidecar.yml orbit_wars_sha_x1_real_label_v1 experiments/github_actions_cpu_sidecar_plan.md experiments/sha_x_canary_retry_A_B_plan.md experiments/sha_x_standard_4shard_dry_run_plan.md experiments/sha_x_no_gpu_today_report.md; then
+            echo "Forbidden Kaggle submit command found" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          roots = [
+              Path(".github/workflows/sha_x_cpu_sidecar.yml"),
+              Path("orbit_wars_sha_x1_real_label_v1"),
+              Path("experiments/github_actions_cpu_sidecar_plan.md"),
+              Path("experiments/sha_x_canary_retry_A_B_plan.md"),
+              Path("experiments/sha_x_standard_4shard_dry_run_plan.md"),
+              Path("experiments/sha_x_no_gpu_today_report.md"),
+          ]
+          patterns = [
+              re.compile(r"ghp_[A-Za-z0-9_]{20,}"),
+              re.compile(r"github_pat_[A-Za-z0-9_]{20,}"),
+              re.compile(r"AKIA[0-9A-Z]{16}"),
+              re.compile("-----BEGIN " + r"(RSA |OPENSSH |EC )?PRIVATE " + "KEY-----"),
+              re.compile(r"(?i)(kaggle_key|kaggle_username)\s*[:=]\s*['\"][^'\"]+['\"]"),
+          ]
+          hits = []
+          for root in roots:
+              paths = [root] if root.is_file() else [p for p in root.rglob("*") if p.is_file()]
+              for path in paths:
+                  try:
+                      text = path.read_text(encoding="utf-8")
+                  except UnicodeDecodeError:
+                      continue
+                  for pattern in patterns:
+                      if pattern.search(text):
+                          hits.append(str(path))
+                          break
+          if hits:
+              print("Credential-like content found:", hits, file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Build CPU sidecar artifact zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip -r sha_x_cpu_sidecar_artifacts_20260610.zip \
+            .github/workflows/sha_x_cpu_sidecar.yml \
+            orbit_wars_sha_x1_real_label_v1/scripts/real_label_smoke.py \
+            orbit_wars_sha_x1_real_label_v1/configs/smoke_v2_canary_config.json \
+            orbit_wars_sha_x1_real_label_v1/configs/canary_retry_A_walltime_config.json \
+            orbit_wars_sha_x1_real_label_v1/configs/canary_retry_B_halfworkload_config.json \
+            orbit_wars_sha_x1_real_label_v1/slurm/01_real_label_smoke_v2_canary.sbatch \
+            experiments/github_actions_cpu_sidecar_plan.md \
+            experiments/sha_x_canary_retry_A_B_plan.md \
+            experiments/sha_x_standard_4shard_dry_run_plan.md \
+            experiments/sha_x_no_gpu_today_report.md \
+            experiments/submission_day_plan_20260610/sha_x_pause_and_resume_plan.md \
+            experiments/submission_day_plan_20260610/sha_x_canary_timeout_diagnosis.md
+
+      - name: Upload CPU sidecar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sha_x_cpu_sidecar_artifacts_20260610.zip
+          path: sha_x_cpu_sidecar_artifacts_20260610.zip
+          if-no-files-found: error
